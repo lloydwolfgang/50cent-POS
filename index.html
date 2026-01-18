@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111827">
+    <title>50cent Corner POS</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Load Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; user-select: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 h-screen w-screen overflow-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS ---
+        const IconWrapper = ({ children, className, onClick }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} onClick={onClick}>{children}</svg>
+        );
+        const Trash2 = (p) => <IconWrapper {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconWrapper>;
+        const TrendingUp = (p) => <IconWrapper {...p}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></IconWrapper>;
+        const Sun = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></IconWrapper>;
+        const Moon = (p) => <IconWrapper {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></IconWrapper>;
+        const ShoppingCart = (p) => <IconWrapper {...p}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></IconWrapper>;
+        const AlertTriangle = (p) => <IconWrapper {...p}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconWrapper>;
+        const AlertCircle = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></IconWrapper>;
+        const Settings = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconWrapper>;
+        const Plus = (p) => <IconWrapper {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></IconWrapper>;
+        const Save = (p) => <IconWrapper {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconWrapper>;
+        const Edit2 = (p) => <IconWrapper {...p}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></IconWrapper>;
+        const PackagePlus = (p) => <IconWrapper {...p}><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><line x1="3.27" y1="6.96" x2="12" y2="12.01"/><line x1="12" y1="22.08" x2="12" y2="12"/><line x1="16" y1="16" x2="22" y2="16"/><line x1="19" y1="13" x2="19" y2="19"/></IconWrapper>;
+        const History = (p) => <IconWrapper {...p}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></IconWrapper>;
+        const ArrowLeft = (p) => <IconWrapper {...p}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></IconWrapper>;
+        const ArrowRight = (p) => <IconWrapper {...p}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></IconWrapper>;
+        const BarChart3 = (p) => <IconWrapper {...p}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></IconWrapper>;
+
+        const INITIAL_CATEGORIES = [
+          { id: 'chips', name: 'Chips', icon: '🍟' },
+          { id: 'candy', name: 'Candy', icon: '🍬' },
+          { id: 'drinks', name: 'Drinks', icon: '🥤' },
+          { id: 'smokes', name: 'Smokes', icon: '🚬' },
+          { id: 'other', name: 'Other', icon: '🍪' },
+        ];
+
+        const INITIAL_PRODUCTS = [
+          { id: 'goslos', name: "Goslo's Chips", price: 7.00, category: 'chips', stock: 24, packSize: 12 },
+          { id: 'stylos', name: "Stylos Corn", price: 8.00, category: 'chips', stock: 20, packSize: 10 },
+          { id: 'niknaks', name: "Nik Naks", price: 2.00, category: 'chips', stock: 50, packSize: 50 },
+          { id: 'popshots', name: "Pop Shots", price: 6.00, category: 'chips', stock: 24, packSize: 12 },
+          { id: 'snappers', name: "Snappers Corn", price: 7.00, category: 'chips', stock: 24, packSize: 24 },
+          { id: 'halls', name: "Halls", price: 1.00, category: 'candy', stock: 72, packSize: 72 },
+          { id: 'bigbom', name: "Big Bom Lollipop", price: 2.00, category: 'candy', stock: 48, packSize: 48 },
+          { id: 'pinpop_candy', name: "Pin Pop (Candy)", price: 1.00, category: 'candy', stock: 50, packSize: 50 },
+          { id: 'stumbo', name: "Stumbo Lollipop", price: 2.00, category: 'candy', stock: 48, packSize: 48 },
+          { id: 'lovecandy', name: "Love Candy", price: 1.00, category: 'candy', stock: 100, packSize: 166 },
+          { id: 'smoothies', name: "Smoothies Supa", price: 1.00, category: 'candy', stock: 50, packSize: 50 },
+          { id: 'coke', name: "Coke", price: 15.00, category: 'drinks', stock: 24, packSize: 6 },
+          { id: 'reboost', name: "Reboost Energy", price: 12.00, category: 'drinks', stock: 24, packSize: 6 },
+          { id: 'loose_rg_switch', name: "Loose: RG Switch", price: 3.00, category: 'smokes', type: 'loose', stock: 20, packSize: 20 },
+          { id: 'loose_dunhill', name: "Loose: Dunhill", price: 7.00, category: 'smokes', type: 'loose', stock: 20, packSize: 20 },
+          { id: 'pack_dunhill', name: "Pack: Dunhill", price: 115.00, category: 'smokes', type: 'pack', stock: 5, packSize: 10 },
+          { id: 'matches', name: "Lion Matches", price: 2.00, category: 'smokes', stock: 100, packSize: 10 },
+          { id: 'plastic', name: "Plastic Bag", price: 1.00, category: 'other', stock: 100, packSize: 100 },
+        ];
+
+        const formatDateGroup = (isoString) => {
+          const date = new Date(isoString);
+          return date.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'short' });
+        };
+
+        function SalesTracker() {
+            const [sales, setSales] = useState(() => {
+                try {
+                const saved = localStorage.getItem('spaza_sales_v2');
+                const parsed = saved ? JSON.parse(saved) : [];
+                return parsed.map(s => ({ ...s, price: isNaN(parseFloat(s.price)) ? 0 : parseFloat(s.price) }));
+                } catch (e) { return []; }
+            });
+
+            const [products, setProducts] = useState(() => {
+                try {
+                const saved = localStorage.getItem('spaza_products_v2'); 
+                if (!saved) return INITIAL_PRODUCTS;
+                const parsed = JSON.parse(saved);
+                if (parsed.length > 0 && parsed[0].stock === undefined) return parsed.map(p => ({ ...p, stock: 10, packSize: 1 }));
+                return parsed;
+                } catch (e) { return INITIAL_PRODUCTS; }
+            });
+
+            const [categories, setCategories] = useState(() => {
+                try {
+                const saved = localStorage.getItem('spaza_categories_v1');
+                return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+                } catch (e) { return INITIAL_CATEGORIES; }
+            });
+
+            const [restockLog, setRestockLog] = useState(() => {
+                try {
+                const saved = localStorage.getItem('spaza_restock_log');
+                return saved ? JSON.parse(saved) : [];
+                } catch (e) { return []; }
+            });
+
+            const [activeCategory, setActiveCategory] = useState(categories[0]?.id || 'chips');
+            const [view, setView] = useState('register');
+            const [inventoryView, setInventoryView] = useState('manage'); 
+            const [darkMode, setDarkMode] = useState(true);
+            const [confirmState, setConfirmState] = useState(null); 
+            const [newItem, setNewItem] = useState({ name: '', price: '', category: 'chips', type: 'standard', stock: '', packSize: '' });
+            const [editingId, setEditingId] = useState(null);
+
+            useEffect(() => { try { localStorage.setItem('spaza_sales_v2', JSON.stringify(sales)); } catch (e) {} }, [sales]);
+            useEffect(() => { try { localStorage.setItem('spaza_products_v2', JSON.stringify(products)); } catch (e) {} }, [products]);
+            useEffect(() => { try { localStorage.setItem('spaza_restock_log', JSON.stringify(restockLog)); } catch (e) {} }, [restockLog]);
+            useEffect(() => { try { localStorage.setItem('spaza_categories_v1', JSON.stringify(categories)); } catch (e) {} }, [categories]);
+
+            const recordSale = (item) => {
+                if (item.stock <= 0) { setConfirmState({ type: 'outOfStock', name: item.name }); return; }
+                const validPrice = isNaN(parseFloat(item.price)) ? 0 : parseFloat(item.price);
+                const newSale = { id: Date.now(), name: item.name, price: validPrice, category: item.category, timestamp: new Date().toISOString() };
+                setSales([newSale, ...sales]);
+                const newStock = item.stock - 1;
+                setProducts(prevProducts => prevProducts.map(p => p.id === item.id ? { ...p, stock: newStock } : p));
+                if (newStock < 10 && newStock >= 0) { setConfirmState({ type: 'lowStock', name: item.name, count: newStock }); }
+            };
+
+            const undoSale = (saleId, itemName) => {
+                setSales(sales.filter(sale => sale.id !== saleId));
+                setProducts(prevProducts => prevProducts.map(p => p.name === itemName ? { ...p, stock: p.stock + 1 } : p));
+            };
+
+            const moveCategory = (index, direction) => {
+                const newCats = [...categories];
+                if (direction === 'left' && index > 0) {
+                [newCats[index - 1], newCats[index]] = [newCats[index], newCats[index - 1]];
+                } else if (direction === 'right' && index < newCats.length - 1) {
+                [newCats[index + 1], newCats[index]] = [newCats[index], newCats[index + 1]];
+                }
+                setCategories(newCats);
+            };
+
+            const executeAction = () => {
+                if (confirmState?.type === 'delete') undoSale(confirmState.id, confirmState.name);
+                else if (confirmState?.type === 'reset') setSales([]);
+                else if (confirmState?.type === 'deleteProduct') setProducts(products.filter(p => p.id !== confirmState.id));
+                else if (confirmState?.type === 'resetRestock') setRestockLog([]);
+                setConfirmState(null);
+            };
+
+            const handleAddItem = (e) => {
+                e.preventDefault();
+                if (!newItem.name || !newItem.price) return;
+                const product = {
+                id: Date.now().toString(),
+                name: newItem.name,
+                price: parseFloat(newItem.price),
+                category: newItem.category,
+                type: newItem.type,
+                stock: parseInt(newItem.stock) || 0,
+                packSize: parseInt(newItem.packSize) || 1
+                };
+                setProducts([...products, product]);
+                setNewItem({ name: '', price: '', category: 'chips', type: 'standard', stock: '', packSize: '' }); 
+                alert("Item added!");
+            };
+
+            const handleUpdateProduct = (id, field, value) => {
+                setProducts(products.map(p => p.id === id ? { ...p, [field]: field === 'name' ? value : parseFloat(value) } : p));
+            };
+
+            const quickRestock = (id) => {
+                const product = products.find(p => p.id === id);
+                if (!product) return;
+                const amountToAdd = product.packSize || 1;
+                setProducts(products.map(p => p.id === id ? { ...p, stock: p.stock + amountToAdd } : p));
+                const logEntry = { id: Date.now(), productId: id, productName: product.name, amount: amountToAdd, timestamp: new Date().toISOString() };
+                setRestockLog([logEntry, ...restockLog]);
+            };
+
+            const getStockColor = (stock, packSize) => {
+                if (stock <= 0) return 'text-red-500 font-bold';
+                if (stock < 10) return 'text-orange-500 font-bold'; 
+                return 'opacity-60';
+            };
+
+            const getTodayTotal = () => sales.reduce((acc, curr) => {
+                const val = parseFloat(curr.price);
+                return acc + (isNaN(val) ? 0 : val);
+            }, 0);
+
+            const getGroupedRestocks = () => {
+                const grouped = {};
+                restockLog.forEach(log => {
+                const dateKey = formatDateGroup(log.timestamp);
+                if (!grouped[dateKey]) grouped[dateKey] = [];
+                grouped[dateKey].push(log);
+                });
+                return grouped;
+            };
+
+            const getTotalStockValue = () => products.reduce((acc, p) => acc + (p.price * p.stock), 0);
+
+            return (
+                <div className={`h-screen flex flex-col transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} font-sans overflow-hidden relative`}>
+                
+                {confirmState && (
+                    <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className={`w-full max-w-sm p-6 rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'} border border-gray-700`}>
+                        <div className="flex flex-col items-center text-center gap-4">
+                        <div className={`p-4 rounded-full ${confirmState.type === 'outOfStock' ? 'bg-red-500/20 text-red-500' : confirmState.type === 'lowStock' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-100 text-red-500'}`}>
+                            {confirmState.type === 'lowStock' ? <AlertCircle size={32} /> : <AlertTriangle size={32} />}
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black">{confirmState.type === 'outOfStock' ? "OUT OF STOCK!" : confirmState.type === 'lowStock' ? "LOW STOCK WARNING" : "Are you sure?"}</h3>
+                            <p className="opacity-70 text-sm mt-2">
+                            {confirmState.type === 'outOfStock' && `You have 0 ${confirmState.name} left. Please restock immediately.`}
+                            {confirmState.type === 'lowStock' && `You only have ${confirmState.count} ${confirmState.name} left! Consider restocking.`}
+                            {confirmState.type === 'delete' && "Undo this sale? Stock will be restored (+1)."}
+                            {confirmState.type === 'reset' && "Delete ALL history? Stock counts will NOT change."}
+                            {confirmState.type === 'deleteProduct' && "Delete this product completely?"}
+                            {confirmState.type === 'resetRestock' && "Clear the Restock Log?"}
+                            </p>
+                        </div>
+                        <div className="flex gap-3 w-full mt-4">
+                            {(confirmState.type === 'outOfStock' || confirmState.type === 'lowStock') ? (
+                            <button onClick={() => setConfirmState(null)} className={`w-full py-3 rounded-xl font-bold ${confirmState.type === 'outOfStock' ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>OK, Got it</button>
+                            ) : (
+                            <>
+                                <button onClick={() => setConfirmState(null)} className={`flex-1 py-3 rounded-xl font-bold ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>Cancel</button>
+                                <button onClick={executeAction} className="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white shadow-lg">Confirm</button>
+                            </>
+                            )}
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                )}
+
+                <header className={`p-4 z-10 ${darkMode ? 'bg-gray-800 shadow-gray-900' : 'bg-white shadow-gray-200'} shadow-md flex justify-between items-center shrink-0`}>
+                    <div>
+                    <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500">50cent Corner POS</h1>
+                    <p className="text-xs opacity-60">Store Manager</p>
+                    </div>
+                    <div className="flex gap-2">
+                    <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 text-yellow-400' : 'bg-gray-200 text-gray-600'}`}>{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+                    <div className={`flex rounded-lg overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                        <button onClick={() => setView('register')} className={`p-2 ${view === 'register' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}><ShoppingCart size={20} /></button>
+                        <button onClick={() => setView('stats')} className={`p-2 ${view === 'stats' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}><TrendingUp size={20} /></button>
+                        <button onClick={() => setView('forecast')} className={`p-2 ${view === 'forecast' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}><BarChart3 size={20} /></button>
+                        <button onClick={() => setView('inventory')} className={`p-2 ${view === 'inventory' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}><Settings size={20} /></button>
+                    </div>
+                    </div>
+                </header>
+
+                {view === 'register' && (
+                    <>
+                    <div className={`p-4 shrink-0 ${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b border-gray-200'}`}>
+                        <div className="flex justify-between items-end">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wider opacity-50">Current Session</p>
+                            <div className="text-4xl font-black font-mono">R {getTodayTotal().toFixed(2)}</div>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs opacity-50 mb-1">{sales.length} items sold</p>
+                            {sales.length > 0 && <div className="text-sm font-medium text-emerald-500 animate-pulse">Last: {sales[0].name}</div>}
+                        </div>
+                        </div>
+                    </div>
+
+                    <div className={`flex overflow-x-auto p-2 gap-2 shrink-0 ${darkMode ? 'bg-gray-900' : 'bg-gray-100'} no-scrollbar`}>
+                        {categories.map(cat => (
+                        <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold whitespace-nowrap transition-all border-2 ${activeCategory === cat.id ? 'bg-blue-600 border-blue-600 text-white scale-105' : darkMode ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-white border-gray-200 text-gray-600'}`}>
+                            <span>{cat.icon}</span><span>{cat.name}</span>
+                        </button>
+                        ))}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-4 pb-24">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {products.filter(p => p.category === activeCategory).map((product) => (
+                            <button key={product.id} onClick={() => recordSale(product)} className={`relative p-4 rounded-xl text-left transition-all active:scale-95 flex flex-col justify-between h-32 border-2 ${darkMode ? 'bg-gray-800 border-gray-700 hover:border-blue-500' : 'bg-white border-gray-200 hover:border-blue-500'} ${product.type === 'loose' ? 'border-dashed' : ''} ${product.stock <= 0 ? 'opacity-40 border-red-500/50' : ''}`}>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <span className="font-bold text-sm leading-tight block mb-1">{product.name.replace('Loose:', '').replace('Pack:', '')}</span>
+                                    {product.type === 'loose' && <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-500">Loose</span>}
+                                    {product.type === 'pack' && <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-500">Pack</span>}
+                                </div>
+                            </div>
+                            <div>
+                                <div className={`text-xs mb-1 flex items-center gap-1 ${getStockColor(product.stock, product.packSize)}`}><PackagePlus size={12} /> {product.stock <= 0 ? "OUT OF STOCK" : `${product.stock} Left`}</div>
+                                <div className="text-xl font-black">R{product.price.toFixed(2)}</div>
+                            </div>
+                            </button>
+                        ))}
+                        </div>
+                        {products.filter(p => p.category === activeCategory).length === 0 && <div className="text-center opacity-40 mt-10">No items found.</div>}
+                    </div>
+                    </>
+                )}
+
+                {view === 'forecast' && (
+                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="max-w-md mx-auto space-y-6">
+                        <div className={`p-6 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg border border-purple-500/30`}>
+                            <h3 className="text-sm font-bold uppercase opacity-60 mb-6 flex items-center gap-2"><BarChart3 size={16} /> Financial Projections</h3>
+                            <div className="space-y-6">
+                            <div><p className="text-xs opacity-50 mb-1">Total Stock Value (Assets)</p><p className="text-4xl font-black text-purple-500">R {getTotalStockValue().toFixed(2)}</p></div>
+                            <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                                <h4 className="font-bold mb-3 text-sm">Revenue Scenarios</h4>
+                                <div className="flex justify-between items-center mb-4 border-b border-gray-500/20 pb-4"><span className="opacity-70 text-sm">If 100% Sold</span><span className="font-mono font-bold text-green-500">R {getTotalStockValue().toFixed(2)}</span></div>
+                                <div className="flex justify-between items-center"><span className="opacity-70 text-sm">If 50% Sold</span><span className="font-mono font-bold text-blue-400">R {(getTotalStockValue() / 2).toFixed(2)}</span></div>
+                            </div>
+                            <p className="text-xs opacity-40 text-center italic">*Based on current stock levels x selling price.</p>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                )}
+
+                {view === 'inventory' && (
+                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="max-w-md mx-auto space-y-6">
+                        <div className="flex gap-2 mb-4 bg-gray-500/10 p-1 rounded-lg">
+                        <button onClick={() => setInventoryView('manage')} className={`flex-1 py-2 text-sm font-bold rounded-md ${inventoryView === 'manage' ? 'bg-white shadow text-black' : 'opacity-50'}`}>Manage Stock</button>
+                        <button onClick={() => setInventoryView('history')} className={`flex-1 py-2 text-sm font-bold rounded-md ${inventoryView === 'history' ? 'bg-white shadow text-black' : 'opacity-50'}`}>Restock Log</button>
+                        </div>
+
+                        {inventoryView === 'manage' && (
+                        <>
+                            <div className={`p-5 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg border border-blue-500/30`}>
+                            <h3 className="text-sm font-bold uppercase opacity-60 mb-4 flex items-center gap-2"><Plus size={16} /> Add New Product</h3>
+                            <form onSubmit={handleAddItem} className="space-y-3">
+                                <input type="text" placeholder="Name" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} className={`w-full p-3 rounded-lg border ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`} />
+                                <div className="flex gap-2">
+                                <input type="number" placeholder="Price (R)" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} className={`w-1/2 p-3 rounded-lg border ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`} />
+                                <select value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})} className={`w-1/2 p-3 rounded-lg border ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+                                </div>
+                                <div className="flex gap-2">
+                                <div className="flex-1"><label className="text-[10px] uppercase font-bold opacity-50 pl-1">Current Stock</label><input type="number" placeholder="e.g. 20" value={newItem.stock} onChange={e => setNewItem({...newItem, stock: e.target.value})} className={`w-full p-3 rounded-lg border ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`} /></div>
+                                <div className="flex-1"><label className="text-[10px] uppercase font-bold opacity-50 pl-1">Pack/Refill Size</label><input type="number" placeholder="e.g. 20" value={newItem.packSize} onChange={e => setNewItem({...newItem, packSize: e.target.value})} className={`w-full p-3 rounded-lg border ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`} /></div>
+                                </div>
+                                <div className="flex gap-2">
+                                <select value={newItem.type} onChange={e => setNewItem({...newItem, type: e.target.value})} className={`w-full p-3 rounded-lg border ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}><option value="standard">Standard Item</option><option value="loose">Loose Stick (Dashed)</option><option value="pack">Full Pack (Purple)</option></select>
+                                </div>
+                                <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors">Add Item</button>
+                            </form>
+                            </div>
+
+                            <div className={`p-4 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+                            <h3 className="text-sm font-bold uppercase opacity-60 mb-4">Customize Layout</h3>
+                            <p className="text-xs opacity-50 mb-3">Click arrows to move category buttons.</p>
+                            <div className="space-y-2">
+                                {categories.map((cat, index) => (
+                                <div key={cat.id} className={`flex items-center justify-between p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                    <div className="flex items-center gap-2"><span>{cat.icon}</span><span className="font-bold text-sm">{cat.name}</span></div>
+                                    <div className="flex gap-1">
+                                    <button onClick={() => moveCategory(index, 'left')} disabled={index === 0} className={`p-1 rounded hover:bg-black/20 ${index === 0 ? 'opacity-20' : ''}`}><ArrowLeft size={16} /></button>
+                                    <button onClick={() => moveCategory(index, 'right')} disabled={index === categories.length - 1} className={`p-1 rounded hover:bg-black/20 ${index === categories.length - 1 ? 'opacity-20' : ''}`}><ArrowRight size={16} /></button>
+                                    </div>
+                                </div>
+                                ))}
+                            </div>
+                            </div>
+
+                            <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg mt-6`}>
+                            <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'} flex justify-between items-center`}><h3 className="text-sm font-bold uppercase opacity-50">Inventory List</h3></div>
+                            <div className="max-h-96 overflow-y-auto">
+                                {products.map((product) => (
+                                <div key={product.id} className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'} flex justify-between items-center`}>
+                                    <div className="flex-1 min-w-0 pr-2"><p className="font-bold text-sm truncate">{product.name}</p><div className="flex gap-2 text-xs opacity-50"><span className={product.stock < 10 ? 'text-red-500 font-bold' : ''}>Stock: {product.stock}</span><span>•</span><span>Pack: {product.packSize || 1}</span></div></div>
+                                    {editingId === product.id ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex flex-col gap-1"><input type="number" placeholder="Price" defaultValue={product.price} onBlur={(e) => handleUpdateProduct(product.id, 'price', e.target.value)} className={`w-16 p-1 text-right rounded ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`} /><input type="number" placeholder="Stock" defaultValue={product.stock} onBlur={(e) => handleUpdateProduct(product.id, 'stock', e.target.value)} className={`w-16 p-1 text-right rounded ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`} /></div>
+                                        <button onClick={() => setEditingId(null)} className="p-2 bg-green-500/20 text-green-500 rounded"><Save size={16}/></button>
+                                    </div>
+                                    ) : (
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => quickRestock(product.id)} className={`p-2 rounded hover:bg-green-500 hover:text-white transition-colors flex items-center gap-1 ${darkMode ? 'bg-gray-700 text-green-400' : 'bg-gray-100 text-green-600'}`}><Plus size={14} /><span className="text-xs font-bold">{product.packSize || 1}</span></button>
+                                        <button onClick={() => setEditingId(product.id)} className="p-2 opacity-50 hover:opacity-100 text-blue-500"><Edit2 size={16} /></button>
+                                        <button onClick={() => requestDeleteProduct(product.id)} className="p-2 opacity-50 hover:opacity-100 text-red-500"><Trash2 size={16} /></button>
+                                    </div>
+                                    )}
+                                </div>
+                                ))}
+                            </div>
+                            </div>
+                        </>
+                        )}
+
+                        {inventoryView === 'history' && (
+                        <div className="space-y-4">
+                            <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+                            <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}><h3 className="text-sm font-bold uppercase opacity-50">Restock Log</h3></div>
+                            <div className="max-h-96 overflow-y-auto p-4">
+                                {Object.entries(getGroupedRestocks()).length === 0 ? <div className="text-center opacity-40 p-4">No restocks recorded yet.</div> : Object.entries(getGroupedRestocks()).map(([date, items]) => (
+                                <div key={date} className="mb-6"><div className="text-xs font-bold uppercase opacity-50 mb-2 sticky top-0 bg-inherit py-1">{date}</div><div className="space-y-2">{items.map(log => (<div key={log.id} className={`flex justify-between items-center p-3 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}><div className="flex items-center gap-2"><PackagePlus size={16} className="text-green-500" /><span className="text-sm font-medium">{log.productName}</span></div><span className="text-sm font-bold text-green-500">+{log.amount}</span></div>))}</div></div>
+                                ))}
+                            </div>
+                            </div>
+                            {Object.entries(getGroupedRestocks()).length > 0 && <button onClick={requestClearRestockLog} className="w-full py-4 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 font-bold transition-colors">Clear Restock Log</button>}
+                        </div>
+                        )}
+                    </div>
+                    </div>
+                )}
+                {view === 'stats' && (
+                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="max-w-md mx-auto space-y-6">
+                        <div className={`p-5 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+                        <h3 className="text-sm font-bold uppercase opacity-50 mb-4">Sales by Category</h3>
+                        <div className="space-y-3">
+                            {categories.map(cat => {
+                            const total = sales.filter(s => s.category === cat.id).reduce((acc, curr) => acc + (isNaN(curr.price) ? 0 : curr.price), 0);
+                            const percent = getTodayTotal() > 0 ? (total / getTodayTotal()) * 100 : 0;
+                            return (
+                                <div key={cat.id}>
+                                <div className="flex justify-between text-sm mb-1"><span className="flex items-center gap-2">{cat.icon} {cat.name}</span><span className="font-mono font-bold">R{total.toFixed(2)}</span></div>
+                                <div className="h-2 bg-gray-700/20 rounded-full overflow-hidden"><div className="h-full bg-blue-500" style={{width: `${percent}%`}}></div></div>
+                                </div>
+                            );
+                            })}
+                        </div>
+                        </div>
+                        <div className={`rounded-2xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+                        <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}><h3 className="text-sm font-bold uppercase opacity-50">Transaction History</h3></div>
+                        <div className="max-h-60 overflow-y-auto">
+                            {sales.map((sale) => (
+                                <div key={sale.id} className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'} flex justify-between items-center`}>
+                                <div><p className="font-bold text-sm">{sale.name}</p></div>
+                                <div className="flex items-center gap-4"><span className="font-mono font-bold">R{isNaN(sale.price) ? "0.00" : sale.price.toFixed(2)}</span><button onClick={() => requestDelete(sale.id, sale.name)} className="text-red-400 hover:text-red-500"><Trash2 size={16} /></button></div>
+                                </div>
+                            ))}
+                        </div>
+                        </div>
+                        <button onClick={requestClearHistory} className="w-full py-4 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 font-bold transition-colors">Reset All Sales Data</button>
+                    </div>
+                    </div>
+                )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SalesTracker />);
+    </script>
+</body>
+</html>
+
+
